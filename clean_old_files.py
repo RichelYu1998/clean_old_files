@@ -112,12 +112,16 @@ def clean_files_older_than_days(
     # 标准化目录路径（跨平台兼容）
     directory_path = Path(directory).resolve()
     
+    # 排除的文件夹列表
+    excluded_folders = {'滕悦', '秦勇', 'demo', 'wifi_scan'}
+    
     logger.info("=" * 60)
     logger.info("开始清理旧文件")
     logger.info(f"清理目录: {directory_path}")
     logger.info(f"删除规则: 删除所有超过 {days} 天的文件")
     logger.info(f"删除规则: 删除所有空文件夹（不考虑时间）")
     logger.info(f"排除规则: 保留.log文件和脚本文件本身")
+    logger.info(f"排除规则: 保留指定的文件夹")
     logger.info(f"排序方式: 按文件下载到本地的修改时间")
     logger.info(f"测试模式: {'是' if dry_run else '否'}")
     logger.info("=" * 60)
@@ -142,6 +146,10 @@ def clean_files_older_than_days(
     for file_path in directory_path.rglob('*'):
         if file_path.is_file():
             try:
+                # 检查文件是否在排除的文件夹中
+                if any(folder in str(file_path) for folder in excluded_folders):
+                    continue
+                
                 # 排除规则：不删除.log文件和脚本文件本身
                 if file_path.suffix.lower() == '.log' or file_path.name == 'clean_old_files.py':
                     continue
@@ -273,6 +281,10 @@ def clean_files_older_than_days(
     for folder_path in directory_path.rglob('*'):
         if folder_path.is_dir():
             try:
+                # 检查文件夹是否在排除列表中
+                if folder_path.name in excluded_folders:
+                    continue
+                
                 # 检查文件夹是否为空
                 folder_items = list(folder_path.iterdir())
                 is_empty = len(folder_items) == 0
