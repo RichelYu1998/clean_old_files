@@ -119,7 +119,7 @@ def clean_files_older_than_days(
     logger.info("开始清理旧文件")
     logger.info(f"清理目录: {directory_path}")
     logger.info(f"删除规则: 删除所有超过 {days} 天的文件")
-    logger.info(f"删除规则: 删除所有空文件夹（不考虑时间）")
+    logger.info(f"删除规则: 删除所有空文件夹和超过 {days} 天的文件夹")
     logger.info(f"排除规则: 保留.log文件和脚本文件本身")
     logger.info(f"排除规则: 保留指定的文件夹")
     logger.info(f"排序方式: 按文件下载到本地的修改时间")
@@ -285,25 +285,26 @@ def clean_files_older_than_days(
                 if folder_path.name in excluded_folders:
                     continue
                 
+                # 获取文件夹信息
+                folder_stat = folder_path.stat()
+                folder_mtime = folder_stat.st_mtime
+                folder_age_days = (current_time - datetime.fromtimestamp(folder_mtime)).days
+                
                 # 检查文件夹是否为空
                 folder_items = list(folder_path.iterdir())
                 is_empty = len(folder_items) == 0
                 
-                # 如果文件夹为空，添加到删除列表（不考虑时间）
-                if is_empty:
-                    # 获取文件夹信息（仅用于日志记录）
-                    folder_stat = folder_path.stat()
-                    folder_mtime = folder_stat.st_mtime
-                    folder_download_time = datetime.fromtimestamp(folder_mtime)
-                    folder_age_days = (current_time - folder_download_time).days
+                # 如果文件夹为空或超过指定天数，添加到删除列表
+                if is_empty or folder_mtime < cutoff_time:
+                    reason = '空文件夹' if is_empty else f'超过{days}天的文件夹'
                     
                     folders_to_delete.append({
                         'path': folder_path,
                         'name': folder_path.name,
                         'mtime': folder_mtime,
-                        'download_time': folder_download_time,
+                        'download_time': datetime.fromtimestamp(folder_mtime),
                         'age_days': folder_age_days,
-                        'reason': '空文件夹'
+                        'reason': reason
                     })
                     
             except (PermissionError, FileNotFoundError) as e:
