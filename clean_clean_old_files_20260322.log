@@ -97,3 +97,39 @@
 2026-03-22 22:47:46 - FileCleaner - INFO -   - 删除失败文件夹数量: 0 个
 2026-03-22 22:47:46 - FileCleaner - INFO - ✓ 成功清理了 19 个文件夹
 2026-03-22 22:47:46 - FileCleaner - INFO - ============================================================
+2026-03-22 23:12:13 - FileCleaner - INFO - ============================================================
+2026-03-22 23:12:13 - FileCleaner - INFO - 开始清理旧文件
+2026-03-22 23:12:13 - FileCleaner - INFO - 清理目录: /Users/yu/Downloads/clean_old_files
+2026-03-22 23:12:13 - FileCleaner - INFO - 删除规则: 删除所有超过 7 天的文件
+2026-03-22 23:12:13 - FileCleaner - INFO - 删除规则: 删除所有空文件夹和超过 7 天的文件夹
+2026-03-22 23:12:13 - FileCleaner - INFO - 排除规则: 保留.log文件和脚本文件本身
+2026-03-22 23:12:13 - FileCleaner - INFO - 排除规则: 保留指定的文件夹
+2026-03-22 23:12:13 - FileCleaner - INFO - 排序方式: 按文件下载到本地的修改时间
+2026-03-22 23:12:13 - FileCleaner - INFO - 测试模式: 是
+2026-03-22 23:12:13 - FileCleaner - INFO - ============================================================
+2026-03-22 23:12:13 - FileCleaner - INFO - 扫描目录 /Users/yu/Downloads/clean_old_files 中的文件...
+2026-03-22 23:12:13 - FileCleaner - INFO - 在目录 /Users/yu/Downloads/clean_old_files 中没有超过 7 天的旧文件需要删除
+2026-03-22 23:16:23 - FileCleaner - INFO - ============================================================
+2026-03-22 23:16:23 - FileCleaner - INFO - 开始清理旧文件
+2026-03-22 23:16:23 - FileCleaner - INFO - 清理目录: /Users/yu/Downloads/clean_old_files
+2026-03-22 23:16:23 - FileCleaner - INFO - 删除规则: 删除所有超过 7 天的文件
+2026-03-22 23:16:23 - FileCleaner - INFO - 删除规则: 删除所有空文件夹和超过 7 天的文件夹
+2026-03-22 23:16:23 - FileCleaner - INFO - 排除规则: 保留.log文件和脚本文件本身
+2026-03-22 23:16:23 - FileCleaner - INFO - 排除规则: 保留指定的文件夹
+2026-03-22 23:16:23 - FileCleaner - INFO - 排序方式: 按文件下载到本地的修改时间
+2026-03-22 23:16:23 - FileCleaner - INFO - 测试模式: 否
+2026-03-22 23:16:23 - FileCleaner - INFO - ============================================================
+2026-03-22 23:16:23 - FileCleaner - INFO - 扫描目录 /Users/yu/Downloads/clean_old_files 中的文件...
+2026-03-22 23:16:23 - FileCleaner - INFO - 在目录 /Users/yu/Downloads/clean_old_files 中没有超过 7 天的旧文件需要删除
+2026-03-22 23:16:41 - FileCleaner - INFO - ============================================================
+2026-03-22 23:16:41 - FileCleaner - INFO - 开始清理旧文件
+2026-03-22 23:16:41 - FileCleaner - INFO - 清理目录: /Users/yu/Downloads/clean_old_files
+2026-03-22 23:16:41 - FileCleaner - INFO - 删除规则: 删除所有超过 7 天的文件
+2026-03-22 23:16:41 - FileCleaner - INFO - 删除规则: 删除所有空文件夹和超过 7 天的文件夹
+2026-03-22 23:16:41 - FileCleaner - INFO - 排除规则: 保留.log文件和脚本文件本身
+2026-03-22 23:16:41 - FileCleaner - INFO - 排除规则: 保留指定的文件夹
+2026-03-22 23:16:41 - FileCleaner - INFO - 排序方式: 按文件下载到本地的修改时间
+2026-03-22 23:16:41 - FileCleaner - INFO - 测试模式: 否
+2026-03-22 23:16:41 - FileCleaner - INFO - ============================================================
+2026-03-22 23:16:41 - FileCleaner - INFO - 扫描目录 /Users/yu/Downloads/clean_old_files 中的文件...
+2026-03-22 23:16:41 - FileCleaner - INFO - 在目录 /Users/yu/Downloads/clean_old_files 中没有超过 7 天的旧文件需要删除
