@@ -140,7 +140,7 @@ def clean_files_older_than_days(
     all_files = []
     files_to_delete = []
     
-    logger.info("扫描文件中...")
+    logger.info(f"扫描目录 {directory_path} 中的文件...")
     
     # 递归扫描目录中的所有文件
     for file_path in directory_path.rglob('*'):
@@ -184,7 +184,7 @@ def clean_files_older_than_days(
         return
 
     if not files_to_delete:
-        logger.info(f"没有超过 {days} 天的旧文件需要删除")
+        logger.info(f"在目录 {directory_path} 中没有超过 {days} 天的旧文件需要删除")
         return
 
     # 按下载时间排序（从旧到新）
