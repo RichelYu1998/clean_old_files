@@ -119,7 +119,8 @@ def clean_files_older_than_days(
     logger.info("开始清理旧文件")
     logger.info(f"清理目录: {directory_path}")
     logger.info(f"删除规则: 删除所有超过 {days} 天的文件")
-    logger.info(f"删除规则: 删除所有空文件夹和超过 {days} 天的文件夹")
+    logger.info(f"删除规则: 删除所有空文件夹")
+    logger.info(f"删除规则: 递归删除超过 {days} 天的非空文件夹")
     logger.info(f"排除规则: 保留.log文件和脚本文件本身")
     logger.info(f"排除规则: 保留指定的文件夹")
     logger.info(f"排序方式: 按文件下载到本地的修改时间")
@@ -179,102 +180,114 @@ def clean_files_older_than_days(
             except (PermissionError, FileNotFoundError) as e:
                 logger.warning(f"无法访问文件 {file_path}: {e}")
 
-    if not all_files:
-        logger.warning("目录中没有文件")
-        return
-
-    if not files_to_delete:
-        logger.info(f"在目录 {directory_path} 中没有超过 {days} 天的旧文件需要删除")
-        return
-
-    # 按下载时间排序（从旧到新）
-    files_to_delete.sort(key=lambda x: x['mtime'])
-    
-    total_files = len(all_files)
-    delete_count = len(files_to_delete)
-    delete_size = sum(f['size'] for f in files_to_delete)
-    
-    logger.info(f"扫描完成，共找到 {total_files} 个文件")
-    logger.info(f"需要删除 {delete_count} 个超过 {days} 天的旧文件")
-    logger.info(f"释放空间: {format_size(delete_size)}")
-    
-    logger.info("\n待删除文件列表（从最旧到最新）：")
-    for i, file_info in enumerate(files_to_delete[:30], 1):
-        download_time_str = file_info['download_time'].strftime('%Y-%m-%d %H:%M:%S')
-        logger.info(
-            f"{i:3d}. {file_info['name']} ({file_info['file_type']}, {format_size(file_info['size'])}, "
-            f"下载时间: {download_time_str}, 已存在: {file_info['age_days']}天)")
-    
-    if len(files_to_delete) > 30:
-        logger.info(f"... 还有 {len(files_to_delete) - 30} 个文件")
-
-    if dry_run:
-        logger.info("\n[测试模式] 未实际删除文件")
-        logger.info("清理完成（测试模式）")
-        return
-
-    logger.info("\n开始删除文件...")
-    deleted_count = 0
-    failed_count = 0
-    deleted_size = 0
-
-    for file_info in files_to_delete:
-        try:
-            file_info['path'].unlink()
-            deleted_count += 1
-            deleted_size += file_info['size']
-            logger.info(f"已删除: {file_info['name']} ({file_info['file_type']}, {format_size(file_info['size'])})")
-        except PermissionError:
-            logger.error(f"删除失败（权限不足）: {file_info['name']}")
-            failed_count += 1
-        except FileNotFoundError:
-            logger.warning(f"文件不存在（可能已被删除）: {file_info['name']}")
-            failed_count += 1
-        except Exception as e:
-            logger.error(f"删除失败 {file_info['name']}: {e}")
-            failed_count += 1
-
-    logger.info("\n" + "=" * 60)
-    logger.info("清理完成")
-    logger.info("删除统计信息:")
-    logger.info(f"  - 成功删除文件数量: {deleted_count} 个")
-    logger.info(f"  - 删除失败文件数量: {failed_count} 个")
-    logger.info(f"  - 释放空间总计: {format_size(deleted_size)}")
-    
-    # 详细统计信息
-    if deleted_count > 0:
-        logger.info("\n详细统计:")
-        logger.info(f"  - 平均文件大小: {format_size(deleted_size / deleted_count)}")
-        logger.info(f"  - 删除文件占比: {deleted_count}/{total_files} ({deleted_count/total_files*100:.1f}%)")
-        logger.info(f"  - 剩余文件数量: {total_files - deleted_count} 个")
-    
-    # 文件类型统计
-    if deleted_count > 0:
-        file_type_stats = {}
-        for file_info in files_to_delete:
-            file_type = file_info['file_type']
-            if file_type not in file_type_stats:
-                file_type_stats[file_type] = {'count': 0, 'size': 0}
-            file_type_stats[file_type]['count'] += 1
-            file_type_stats[file_type]['size'] += file_info['size']
+    # 处理文件删除
+    if files_to_delete:
+        # 按下载时间排序（从旧到新）
+        files_to_delete.sort(key=lambda x: x['mtime'])
         
-        logger.info("\n文件类型统计:")
-        for file_type, stats in sorted(file_type_stats.items(), key=lambda x: x[1]['size'], reverse=True):
-            logger.info(f"  - {file_type}: {stats['count']} 个文件, {format_size(stats['size'])}")
-    
-    # 总结信息
-    logger.info("\n总结:")
-    if deleted_count > 0:
-        logger.info(f"✓ 成功清理了 {deleted_count} 个旧文件")
-        logger.info(f"✓ 释放了 {format_size(deleted_size)} 磁盘空间")
+        total_files = len(all_files)
+        delete_count = len(files_to_delete)
+        delete_size = sum(f['size'] for f in files_to_delete)
+        
+        logger.info(f"扫描完成，共找到 {total_files} 个文件")
+        logger.info(f"需要删除 {delete_count} 个超过 {days} 天的旧文件")
+        logger.info(f"释放空间: {format_size(delete_size)}")
+        
+        logger.info("\n待删除文件列表（从最旧到最新）：")
+        for i, file_info in enumerate(files_to_delete[:30], 1):
+            download_time_str = file_info['download_time'].strftime('%Y-%m-%d %H:%M:%S')
+            logger.info(
+                f"{i:3d}. {file_info['name']} ({file_info['file_type']}, {format_size(file_info['size'])}, "
+                f"下载时间: {download_time_str}, 已存在: {file_info['age_days']}天)")
+        
+        if len(files_to_delete) > 30:
+            logger.info(f"... 还有 {len(files_to_delete) - 30} 个文件")
+
+        if not dry_run:
+            logger.info("\n开始删除文件...")
+            deleted_count = 0
+            failed_count = 0
+            deleted_size = 0
+
+            for file_info in files_to_delete:
+                try:
+                    file_info['path'].unlink()
+                    deleted_count += 1
+                    deleted_size += file_info['size']
+                    logger.info(f"已删除: {file_info['name']} ({file_info['file_type']}, {format_size(file_info['size'])}")
+                except PermissionError:
+                    logger.error(f"删除失败（权限不足）: {file_info['name']}")
+                    failed_count += 1
+                except FileNotFoundError:
+                    logger.warning(f"文件不存在（可能已被删除）: {file_info['name']}")
+                    failed_count += 1
+                except Exception as e:
+                    logger.error(f"删除失败 {file_info['name']}: {e}")
+                    failed_count += 1
+
+            logger.info("\n" + "=" * 60)
+            logger.info("清理完成")
+            logger.info("删除统计信息:")
+            logger.info(f"  - 成功删除文件数量: {deleted_count} 个")
+            logger.info(f"  - 删除失败文件数量: {failed_count} 个")
+            logger.info(f"  - 释放空间总计: {format_size(deleted_size)}")
+            
+            # 详细统计信息
+            if deleted_count > 0:
+                logger.info("\n详细统计:")
+                logger.info(f"  - 平均文件大小: {format_size(deleted_size / deleted_count)}")
+                logger.info(f"  - 删除文件占比: {deleted_count}/{total_files} ({deleted_count/total_files*100:.1f}%)")
+                logger.info(f"  - 剩余文件数量: {total_files - deleted_count} 个")
+            
+            # 文件类型统计
+            if deleted_count > 0:
+                file_type_stats = {}
+                for file_info in files_to_delete:
+                    file_type = file_info['file_type']
+                    if file_type not in file_type_stats:
+                        file_type_stats[file_type] = {'count': 0, 'size': 0}
+                    file_type_stats[file_type]['count'] += 1
+                    file_type_stats[file_type]['size'] += file_info['size']
+                
+                logger.info("\n文件类型统计:")
+                for file_type, stats in sorted(file_type_stats.items(), key=lambda x: x[1]['size'], reverse=True):
+                    logger.info(f"  - {file_type}: {stats['count']} 个文件, {format_size(stats['size'])}")
+            
+            # 总结信息
+            logger.info("\n总结:")
+            if deleted_count > 0:
+                logger.info(f"✓ 成功清理了 {deleted_count} 个旧文件")
+                logger.info(f"✓ 释放了 {format_size(deleted_size)} 磁盘空间")
+            else:
+                logger.info("ℹ 没有需要删除的旧文件")
+            
+            if failed_count > 0:
+                logger.warning(f"⚠ 有 {failed_count} 个文件删除失败")
     else:
-        logger.info("ℹ 没有需要删除的旧文件")
+        if not all_files:
+            logger.warning("目录中没有文件")
+        else:
+            logger.info(f"在目录 {directory_path} 中没有超过 {days} 天的旧文件需要删除")
     
-    if failed_count > 0:
-        logger.warning(f"⚠ 有 {failed_count} 个文件删除失败")
+    # 递归删除文件夹及其内容
+    def delete_folder_recursively(folder_path):
+        """递归删除文件夹及其所有内容"""
+        try:
+            # 先删除文件夹内的所有文件
+            for item in folder_path.iterdir():
+                if item.is_file():
+                    item.unlink()
+                elif item.is_dir():
+                    delete_folder_recursively(item)
+            # 最后删除空文件夹
+            folder_path.rmdir()
+            return True
+        except Exception as e:
+            logger.error(f"递归删除文件夹失败 {folder_path}: {e}")
+            return False
     
-    # 删除所有空文件夹（不考虑下载时间）
-    logger.info("\n开始扫描和删除空文件夹...")
+    # 扫描和删除文件夹
+    logger.info("\n开始扫描和删除文件夹...")
     folders_to_delete = []
     
     # 递归扫描所有文件夹
@@ -294,17 +307,28 @@ def clean_files_older_than_days(
                 folder_items = list(folder_path.iterdir())
                 is_empty = len(folder_items) == 0
                 
-                # 如果文件夹为空或超过指定天数，添加到删除列表
-                if is_empty or folder_mtime < cutoff_time:
-                    reason = '空文件夹' if is_empty else f'超过{days}天的文件夹'
-                    
+                # 确定是否需要删除
+                if is_empty:
+                    # 空文件夹直接删除
                     folders_to_delete.append({
                         'path': folder_path,
                         'name': folder_path.name,
                         'mtime': folder_mtime,
                         'download_time': datetime.fromtimestamp(folder_mtime),
                         'age_days': folder_age_days,
-                        'reason': reason
+                        'reason': '空文件夹',
+                        'is_empty': True
+                    })
+                elif folder_mtime < cutoff_time:
+                    # 非空文件夹且超过天数，递归删除
+                    folders_to_delete.append({
+                        'path': folder_path,
+                        'name': folder_path.name,
+                        'mtime': folder_mtime,
+                        'download_time': datetime.fromtimestamp(folder_mtime),
+                        'age_days': folder_age_days,
+                        'reason': f'超过{days}天的文件夹',
+                        'is_empty': False
                     })
                     
             except (PermissionError, FileNotFoundError) as e:
@@ -328,24 +352,41 @@ def clean_files_older_than_days(
             
             for folder_info in folders_to_delete:
                 try:
-                    folder_info['path'].rmdir()  # 使用rmdir只能删除空文件夹
-                    deleted_folders_count += 1
-                    logger.info(f"已删除文件夹: {folder_info['name']} ({folder_info['reason']})")
-                except OSError as e:
-                    # 如果文件夹不为空，rmdir会失败，这是正常的
-                    if "目录不是空的" in str(e) or "The directory is not empty" in str(e):
-                        logger.warning(f"文件夹不为空，跳过删除: {folder_info['name']}")
+                    if folder_info['is_empty']:
+                        # 空文件夹直接删除
+                        folder_info['path'].rmdir()
+                        deleted_folders_count += 1
+                        logger.info(f"已删除文件夹: {folder_info['name']} ({folder_info['reason']})")
                     else:
-                        logger.error(f"删除文件夹失败 {folder_info['name']}: {e}")
-                        failed_folders_count += 1
+                        # 非空文件夹且超过天数，递归删除
+                        if delete_folder_recursively(folder_info['path']):
+                            deleted_folders_count += 1
+                            logger.info(f"已递归删除文件夹: {folder_info['name']} ({folder_info['reason']})")
+                        else:
+                            failed_folders_count += 1
+                            # 询问用户是否继续
+                            response = input(f"删除文件夹 {folder_info['name']} 失败，是否继续处理其他文件夹？(y/N): ")
+                            if response.lower() not in ['y', 'yes']:
+                                logger.info("用户选择终止操作")
+                                break
                 except PermissionError:
                     logger.error(f"删除文件夹失败（权限不足）: {folder_info['name']}")
                     failed_folders_count += 1
+                    # 询问用户是否继续
+                    response = input(f"删除文件夹 {folder_info['name']} 失败（权限不足），是否继续处理其他文件夹？(y/N): ")
+                    if response.lower() not in ['y', 'yes']:
+                        logger.info("用户选择终止操作")
+                        break
                 except FileNotFoundError:
                     logger.warning(f"文件夹不存在（可能已被删除）: {folder_info['name']}")
                 except Exception as e:
                     logger.error(f"删除文件夹失败 {folder_info['name']}: {e}")
                     failed_folders_count += 1
+                    # 询问用户是否继续
+                    response = input(f"删除文件夹 {folder_info['name']} 失败: {e}，是否继续处理其他文件夹？(y/N): ")
+                    if response.lower() not in ['y', 'yes']:
+                        logger.info("用户选择终止操作")
+                        break
             
             logger.info(f"\n文件夹删除统计:")
             logger.info(f"  - 成功删除文件夹数量: {deleted_folders_count} 个")
